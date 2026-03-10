@@ -3,15 +3,15 @@ import torch
 from torch import nn
 
 class TextEmbedding(nn.Module):
-    def __init__(self, vocab_size=50257, max_context_len=128, d_model=64):
+    def __init__(self, vocab_size=50257, max_seq_len=128, d_model=64):
         """
         Args:
             vocab_size: 词表大小，50257 (GPT-2)
-            max_context_len: 最大上下文长度
+            max_seq_len: 最大上下文长度
             d_model: 模型隐藏层大小
         """
         super().__init__()
-        self.max_context_len = max_context_len
+        self.max_seq_len = max_seq_len
         self.token_emb = nn.Embedding(vocab_size, d_model)
     
     def forward(self, tokens: Union[torch.Tensor, list[int]]) -> torch.Tensor:
@@ -24,7 +24,7 @@ class TextEmbedding(nn.Module):
         if isinstance(tokens, list):
             tokens = torch.tensor(tokens)
         B, T = tokens.size()
-        assert T <= self.max_context_len, f"输入序列长度{T}超过最大长度{self.max_context_len}"
+        assert T <= self.max_seq_len, f"输入序列长度{T}超过最大长度{self.max_seq_len}"
         
         x = self.token_emb(tokens)
         return x
@@ -36,7 +36,8 @@ if __name__ == "__main__":
     tokenizer = Tokenizer()
     tokens = tokenizer.tokenize(text)
     print(tokens)
-    tokens = [tokens]
+    tokens = [tokens, tokens]
     text_embedding = TextEmbedding()
     text_embed = text_embedding(tokens)
+    print(text_embed.shape)
     print(text_embed)

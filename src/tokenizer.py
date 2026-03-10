@@ -3,9 +3,11 @@ import tiktoken
 
 class Tokenizer():
     def __init__(self):
-        self.enc = tiktoken.get_encoding("gpt2")
+        self.enc = tiktoken.get_encoding("cl100k_base")
         self.vocab_size = self.enc.n_vocab # 50257
         self.eot_token = self.enc.eot_token  # <|endoftext|> = 50256
+        # print(self.vocab_size, "and", self.eot_token)
+        # 100277 and 100257
         
     def tokenize(self, text:str, allowed_special={"<|endoftext|>"}) -> list[int]:
         """ 

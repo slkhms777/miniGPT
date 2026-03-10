@@ -1,0 +1,16 @@
+
+
+vocab_size: 100277
+max_seq_len: 2048
+
+d_model: 1024
+intermediate_dim: 3584 # d_model * 3.5
+num_layers: 16
+
+num_heads: 16
+num_kv_heads: 4
+
+base: 10000.0
+
+dropout: 0.1
+device: "mps"
