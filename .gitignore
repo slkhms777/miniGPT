@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+
+# hydra output
+hydra_outputs
+hydra_multirun
+
+# datasets
+datasets/*

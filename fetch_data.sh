@@ -1,0 +1,1 @@
+wget -P dataset/ https://huggingface.co/datasets/roneneldan/TinyStories/resolve/main/TinyStories-train.txt

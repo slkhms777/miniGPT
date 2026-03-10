@@ -5,6 +5,7 @@ from .tokenizer import Tokenizer
 from .emb import TextEmbedding
 from .rope import precompute_freq_cis
 from .norm import RMSNorm
+from .gpt import GPT
 
 __all__ = [
     "DecoderLayer",
@@ -12,5 +13,6 @@ __all__ = [
     "Tokenizer",
     "TextEmbedding",
     "precompute_freq_cis",
-    "RMSNorm"
+    "RMSNorm",
+    "GPT"
 ]

@@ -1,14 +1,19 @@
+hydra:
+  run:
+    dir: ./hydra_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ./hydra_multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
 
-
-vocab_size: 100277
+vocab_size: 50257
 max_seq_len: 2048
 
-d_model: 1024
-intermediate_dim: 3584 # d_model * 3.5
-num_layers: 16
+d_model: 128
+intermediate_dim: 448 # d_model * 3.5
+num_layers: 6
 
 num_heads: 16
-num_kv_heads: 4
+num_kv_heads: 8
 
 base: 10000.0
 

@@ -1,11 +1,8 @@
-from numpy.random.mtrand import f
 from torch import nn
 import torch
-from src import TextEmbedding
-from src import DecoderLayer
-import hydra
-from omegaconf import DictConfig
-from src import precompute_freq_cis
+from .emb import TextEmbedding
+from .decoder import DecoderLayer
+from .rope import precompute_freq_cis
 
 class GPT(nn.Module):
     def __init__(self, vocab_size, max_seq_len, d_model, num_heads, num_kv_heads, 
@@ -60,31 +57,3 @@ class GPT(nn.Module):
         
         return y
         
-@hydra.main(config_path="configs", config_name="gpt", version_base=None)
-def main(cfg: DictConfig):
-    device = (
-        "cuda" if torch.cuda.is_available()
-        else "mps" if torch.backends.mps.is_available()
-        else "cpu"
-    )
-    gpt = GPT(
-        vocab_size=cfg.vocab_size,
-        max_seq_len=cfg.max_seq_len,
-        d_model=cfg.d_model,
-        num_heads=cfg.num_heads, 
-        num_kv_heads=cfg.num_kv_heads,
-        intermediate_dim=cfg.intermediate_dim, 
-        num_layers=cfg.num_layers, 
-        base=cfg.base, 
-        dropout=cfg.dropout,
-        device=device
-    ).to(device)
-    gpt.eval()
-    
-    x = torch.randint(0, 100000, (4,128)).to(device)
-    y = gpt(x)
-    print(x.shape) # torch.Size([4, 128])
-    print(y.shape) # torch.Size([4, 128, 100277])
-    
-if __name__ == "__main__":
-    main()
