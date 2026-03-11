@@ -8,14 +8,14 @@ class Tokenizer():
         self.enc = tiktoken.get_encoding("gpt2") # 100277
         self.vocab_size = self.enc.n_vocab 
         self.eot_token = self.enc.eot_token  # <|endoftext|> = 50256
-        self.pad_token_id = self.enc.eot_token  # GPT-2 没有专门的 pad token，使用 eot_token 作为填充
+        self.pad_token = self.enc.eot_token  # GPT-2 没有专门的 pad token，使用 eot_token 作为填充
     
     def encode(
         self,
         text:str,
-        max_length:int = None,
-        truncation:bool = True,
-        padding:bool = True,
+        max_length:int = 1025,
+        truncation:bool = False,
+        padding:bool = False,
         allowed_special={"<|endoftext|>"},
     ) -> Dict[str, torch.Tensor]:
         """
@@ -29,7 +29,7 @@ class Tokenizer():
         Returns:
             dict: {
                 "input_ids": tensor [max_length],
-                "attention_mask": tensor [max_length],
+                "valid_mask": tensor [max_length],
                 "length": int (实际长度)
             }
         """
@@ -41,56 +41,58 @@ class Tokenizer():
             tokens = tokens[:max_length]
         length = len(tokens)
         
-        attention_mask = [1] * length
+        valid_mask = [1] * length
         
         # 填充
-        if padding and length < max_length:
-            tokens += [self.eot_token] * (max_length - length)
-            attention_mask += [0] * (max_length - length)
+        if padding and max_length is not None and  length < max_length:
+            tokens += [self.pad_token] * (max_length - length)
+            valid_mask += [0] * (max_length - length)
         
         # 转换为 tensor
         return {
             "input_ids": torch.tensor(tokens, dtype=torch.long),
-            "attention_mask": torch.tensor(attention_mask, dtype=torch.long),
+            "valid_mask": torch.tensor(valid_mask, dtype=torch.long),
             "length": length
         }
     
     def encode_batch(
         self,
         texts:list[str],
-        max_length:int = None,
-        truncation:bool = True,
-        padding:bool = True,
+        max_length:int = 1025,
         allowed_special={"<|endoftext|>"},
     ) -> Dict[str, torch.Tensor]:
         """
         Args:
             texts: 输入文本列表
             max_length: 最大长度
-            padding: 是否填充
-            truncation: 是否截断
             allowed_special: 允许的特殊 token
         
         Returns:
             dict: {
                 "input_ids": tensor [batch_size, max_length],
-                "attention_mask": tensor [batch_size, max_length],
+                "valid_mask": tensor [batch_size, max_length],
                 "lengths": tensor [batch_size] (截断后的实际长度)
             }
         """
         batch_input_ids = []
-        batch_attention_mask = []
+        batch_valid_mask = []
         batch_lengths = []
         
+        # max_length不能为None，因为批处理时需要统一长度
+        assert max_length is not None, "批处理时必须指定 max_length"
+        
+        truncation = True  # 批处理时默认启用截断
+        padding = True  # 批处理时默认启用填充
+        # 保证每个返回的序列都被截断或填充到 max_length
         for text in texts:
             encoding = self.encode(text, max_length, truncation, padding, allowed_special)
             batch_input_ids.append(encoding["input_ids"])
-            batch_attention_mask.append(encoding["attention_mask"])
+            batch_valid_mask.append(encoding["valid_mask"])
             batch_lengths.append(encoding["length"])
         
         return {
             "input_ids": torch.stack(batch_input_ids),
-            "attention_mask": torch.stack(batch_attention_mask),
+            "valid_mask": torch.stack(batch_valid_mask),
             "lengths": torch.tensor(batch_lengths, dtype=torch.long)
         }
     
@@ -101,10 +103,8 @@ class Tokenizer():
         Returns:
             text (str): 输出的句子
         """
-        print(f"tokens type: {type(tokens)}, tokens: {tokens}")
         if isinstance(tokens, torch.Tensor):
             tokens = tokens.tolist()
-        print(f"tokens type: {type(tokens)}, tokens: {tokens}")
         text = self.enc.decode(tokens)
         return text
         

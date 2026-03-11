@@ -9,7 +9,8 @@ class GPT(nn.Module):
         intermediate_dim, num_layers, base, dropout=0.1, device="cpu"):
         
         super().__init__()
-        
+        self.device = device
+        self.max_seq_len = max_seq_len
         self.embedding = TextEmbedding(
             vocab_size=vocab_size,
             max_seq_len=max_seq_len,
@@ -32,28 +33,25 @@ class GPT(nn.Module):
         self.lm_head = nn.Linear(d_model, vocab_size, bias=False).to(device)
         self.register_buffer("freqs_cis", precompute_freq_cis(d_model//num_heads, base, max_seq_len), persistent=False)
     
-    def forward(self, x, start_pos=0, freqs_cis=None, mask=None):
+    def forward(self, x, start_pos=0):
         """
         Args: 
             x, Shape [batch_size, seq_len]
         Return:
-            y, Shape [batch_size, seq_len + 1]
-            new_kv: (new_k, new_v) 更新后的缓存，训练时为None
+            logits, Shape [batch_size, seq_len, vocab_size] 不进行softmax，便于cross-entropy loss计算
         """
         
         h = self.embedding(x) # [batch_size, seq_len, d_model]
         b, seq_len = x.shape
-        freqs_cis = self.freqs_cis[start_pos:start_pos+seq_len]
+        freqs_cis = self.freqs_cis[start_pos:start_pos+seq_len].to(h.device)
         mask = None
         if seq_len > 1:
             mask = torch.full((seq_len, seq_len), float("-inf"), device=x.device).triu_(1)
 
         for layer in self.blocks:
-            h = layer(h, start_pose=0, freqs_cis=freqs_cis, mask=mask) # 训练时不使用缓存和掩码
+            h = layer(h, start_pos=start_pos, freqs_cis=freqs_cis, mask=mask) 
+        # h = self.ln_final(h)[:, -1]  # 只取最后一个位置的输出进行预测，Shape [batch_size, d_model]
+        logits = self.lm_head(h) # [batch_size, vocab_size]
         
-        logits = self.lm_head(self.ln_final(h))
-        
-        y = torch.softmax(logits, dim=-1)
-        
-        return y
+        return logits
         

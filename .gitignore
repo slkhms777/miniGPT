@@ -15,3 +15,6 @@ hydra_multirun
 
 # datasets
 datasets/*
+
+# checkpoints
+checkpoints/*

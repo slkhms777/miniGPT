@@ -14,7 +14,7 @@ class TinyStoriesDataset(Dataset):
         # 读取 Parquet
         table = pq.read_table(parquet_path, columns=["text"])
         self.texts = table.column("text").to_pylist()
-        print(f"Loaded {len(self.texts)} stories from {parquet_path}")
+        # print(f"Loaded {len(self.texts)} stories from {parquet_path}")
     
     def __len__(self):
         return len(self.texts)
@@ -33,11 +33,11 @@ class TinyStoriesDataset(Dataset):
         Returns:
         dict: {
             “input_ids”: tensor [batch_size, max_length],
-            “attention_mask”: tensor [batch_size, max_length],
+            “attention_mask”: tensor [batch_size, max_length], 有效为1，无效为0
             “lengths”: tensor [batch_size] 
         }
         """
-        print(f"Encoded ids shape: {encoded_info["input_ids"].shape}")
+        # print(f"Encoded ids shape: {encoded_info["input_ids"].shape}")
         return encoded_info
 
 def get_story_dataloader(parquet_path="datasets/tinystories_train.parquet", tokenizer=None, batch_size=8, max_length=1024, shuffle=True, num_workers=4):

@@ -15,9 +15,9 @@ class DecoderLayer(nn.Module):
         self.norm2 = RMSNorm(d_model)
         self.ffn = MLP(d_model, intermediate_dim)
     
-    def forward(self, x, start_pose, freqs_cis, mask):
+    def forward(self, x, start_pos, freqs_cis, mask):
         # Pre-LN 结构
-        x = x + self.attn(self.norm1(x), start_pose, freqs_cis, mask)
+        x = x + self.attn(self.norm1(x), start_pos, freqs_cis, mask)
         x = x + self.ffn(self.norm2(x))
         return x
         
