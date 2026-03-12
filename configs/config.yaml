@@ -8,12 +8,16 @@ hydra:
 vocab_size: 50257
 eot_token: 50256
 pad_token: 50256
-max_seq_len: 1025 # 输入和标签都是1024
+# max_seq_len: 1025 # 输入和标签都是1024
+max_seq_len: 513
 
+ckpt_dir: "checkpoints"
 num_epochs: 5
+batch_size: 24
 learning_rate: 3e-4
 weight_decay: 0.1
 grad_clip_max_norm: 1.0
+log_interval: 80
 
 d_model: 128
 intermediate_dim: 448 # d_model * 3.5
@@ -22,4 +26,4 @@ num_heads: 16
 num_kv_heads: 8
 base: 10000.0
 dropout: 0.1
-device: "mps"
+device: "cuda"

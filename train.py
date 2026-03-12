@@ -5,6 +5,7 @@ from utils import get_story_dataloader
 from omegaconf import DictConfig
 import hydra
 from tqdm import tqdm
+import os
 
 @hydra.main(config_path="configs", config_name="config", version_base=None)
 def train(cfg: DictConfig):
@@ -15,8 +16,8 @@ def train(cfg: DictConfig):
     dataloader = get_story_dataloader(
         "datasets/tinystories_train.parquet",
         tokenizer,
-        batch_size=2,
-        max_length=1024,
+        batch_size=cfg.batch_size,
+        max_length=cfg.max_seq_len,
         shuffle=True,
         num_workers=4
     )
@@ -42,14 +43,12 @@ def train(cfg: DictConfig):
     )
     # test( tokenizer, model, cfg, max_new_tokens=200)
     # return
-
-    model.train()
+    os.makedirs(cfg.ckpt_dir, exist_ok=True)
     for epoch in range(cfg.num_epochs):
+        model.train()
         tqdm_bar = tqdm(dataloader, desc=f"Epoch {epoch+1}/{cfg.num_epochs}")
-        for batch in tqdm_bar:
+        for b_i, batch in enumerate(tqdm_bar):
             input_ids = batch["input_ids"].to(cfg.device) # [batch_size, max_seq_len]
-            # valid_mask = batch["valid_mask"].to(cfg.device)
-            # lengths = batch["lengths"].to(cfg.device)
             
             # 前向传播
             inputs = input_ids[:, :-1]  # 输入序列，去掉最后一个 token # [batch_size, seq_len]
@@ -69,14 +68,25 @@ def train(cfg: DictConfig):
             torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.grad_clip_max_norm)
             optimizer.step()
             
-            print(f"Epoch {epoch}, Loss: {loss.item():.6f}")
+            if b_i % cfg.log_interval == 0:
+                print(f"Epoch {epoch}, Loss: {loss.item():.6f}")
+                with open(f"checkpoints/epoch_{epoch}_log.txt", "a") as f:
+                    f.write(f"Batch {b_i}, Loss: {loss.item():.6f}\n")
             
         torch.save(model.state_dict(), f"checkpoints/epoch_{epoch}.pth")
-        texts = test(tokenizer, model, cfg, 200)
+        texts = test(tokenizer, model, cfg, 500)
         # 保存到checkpoints目录下
         with open(f"checkpoints/epoch_{epoch}_samples.txt", "w") as f:
             for text in texts:
                 f.write(text + "\n")
+def sample(logits: torch.Tensor, temperature: float = 1.0):
+    # logits: [batch, vocab_size]
+    # temperature: [batch]
+    # 对 logits 进行温度缩放
+    logits = logits / max(temperature, 1e-5) #防止除以0
+    probs: torch.Tensor = torch.softmax(logits, dim=-1)  # [batch, vocab_size]
+    next_token = probs.div_(torch.empty_like(probs).exponential_(1)).argmax(dim=-1)
+    return next_token
 
 def test(tokenizer : Tokenizer = None, model: GPT = None, cfg:DictConfig = None, max_new_tokens: int=200):
     # 测试模型生成文本
