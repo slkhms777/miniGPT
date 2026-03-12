@@ -4,7 +4,7 @@
 
 > **No Vibe Coding** —— 严格参照 GPT-3、Llama 3 与 Qwen 3 原论文，逐模块实现注意力机制、层归一化、训练循环等核心组件。
 
-## 项目亮点
+## 项目内容
 
 - **纯手搓的实现**：不依赖 Transformers 等高层封装，从最底层矩阵乘法开始构建完整的 GPT 架构
 - **现代架构设计**：集成 GQA (Grouped Query Attention) 和 KV Cache 等 engineering 技术  
@@ -19,24 +19,27 @@
 
 ## 项目结构
 
+```
 miniGPT/
-├── configs/                    
-│   └── config.yaml           # 配置文件
-├── utils/                    # 数据处理模块
-│   ├── data.py               # parquet格式的 Dataset 与 DataLoader 实现
-│   └── convert_txt_to_pq.py  # 数据预处理
-├── src/                      # 模型架构
-│   ├── attention.py          # GQA、KV Cache 实现
-│   ├── decoder.py            # decoder block
-│   ├── gpt.py                # 主模型
-│   ├── emb.py                # 词嵌入
-│   ├── norm.py               # RMSNorm 实现
-│   ├── mlp.py                # 标准的 llama3 MLP实现
-│   ├── tokenizer.py          # 基于 Tiktoken 的 tokenizer 实现
-│   └── rope.py               # 旋转位置编码
-├── fetch_data.sh             # 数据下载与预处理
-├── train.py                  # 训练
-└── inference.py              # 推理
+├── configs/                   # 配置文件目录
+│   └── config.yaml            # 模型、训练以及推理的参数配置
+├── utils/                     # 数据处理模块
+│   ├── data.py                # Parquet 格式的 Dataset 与 DataLoader 实现
+│   └── convert_txt_to_pq.py   # 数据预处理
+├── src/                       # 核心模型架构
+│   ├── attention.py           # 自注意力机制 (GQA + KV Cache)
+│   ├── decoder.py             # Decoder Block
+│   ├── gpt.py                 # 主模型 GPT 架构
+│   ├── emb.py                 # 词嵌入
+│   ├── norm.py                # RMSNorm 
+│   ├── mlp.py                 # Llama 3 风格的 SwiGLU MLP 实现
+│   ├── tokenizer.py           # 基于 Tiktoken 的 tokenizer
+│   └── rope.py                # 旋转位置编码
+├── fetch_data.sh              # TinyStories 数据下载与预处理脚本
+├── train.py                   # 训练
+└── inference.py               # 推理
+```
+
 
 ## 快速开始
 
