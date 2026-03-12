@@ -11,7 +11,6 @@ import os
 def train(cfg: DictConfig):
     # 初始化 tokenizer
     tokenizer = Tokenizer()
-    
     # 创建 DataLoader
     dataloader = get_story_dataloader(
         "datasets/tinystories_train.parquet",
@@ -79,16 +78,14 @@ def train(cfg: DictConfig):
         with open(f"checkpoints/epoch_{epoch}_samples.txt", "w") as f:
             for text in texts:
                 f.write(text + "\n")
+                
 def sample(logits: torch.Tensor, temperature: float = 1.0):
-    # logits: [batch, vocab_size]
-    # temperature: [batch]
-    # 对 logits 进行温度缩放
     logits = logits / max(temperature, 1e-5) #防止除以0
     probs: torch.Tensor = torch.softmax(logits, dim=-1)  # [batch, vocab_size]
-    next_token = probs.div_(torch.empty_like(probs).exponential_(1)).argmax(dim=-1)
-    return next_token
+    # 标准 multinomial sampling (不可导，仅用于推理)
+    return torch.multinomial(probs, num_samples=1).squeeze(-1)
 
-def test(tokenizer : Tokenizer = None, model: GPT = None, cfg:DictConfig = None, max_new_tokens: int=200):
+def test(tokenizer : Tokenizer = None, model: GPT = None, cfg:DictConfig = None, max_new_tokens: int=200, temperature: float = 1.0):
     # 测试模型生成文本
     eos_id = cfg.eot_token
     model.eval()
@@ -112,7 +109,10 @@ def test(tokenizer : Tokenizer = None, model: GPT = None, cfg:DictConfig = None,
         for cur_pos in range(min(prompt_lens), total_len):
             logits = model.forward(tokens[:, prev_pos:cur_pos], prev_pos) # [batch, cur_pos-prev_pos, vocab_size]
             logits = logits[:, -1, :]   # 只取最后一个位置: [batch, vocab_size]
-            next_token = logits.argmax(dim=-1) 
+            if temperature > 0:
+                next_token = sample(logits, temperature)  
+            else:
+                next_token = logits.argmax(dim=-1) 
             # 如果当前位置是prompt的一部分，则使用原始token，否则使用模型生成的token
             next_token = torch.where(prompt_mask[:, cur_pos], tokens[:, cur_pos], next_token) 
             tokens[:, cur_pos] = next_token

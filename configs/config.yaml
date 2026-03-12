@@ -1,3 +1,4 @@
+# hydra
 hydra:
   run:
     dir: ./hydra_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}
@@ -5,12 +6,14 @@ hydra:
     dir: ./hydra_multirun/${now:%Y-%m-%d}/${now:%H-%M-%S}
     subdir: ${hydra.job.num}
 
+# token
 vocab_size: 50257
 eot_token: 50256
 pad_token: 50256
 # max_seq_len: 1025 # 输入和标签都是1024
 max_seq_len: 513
 
+# train
 ckpt_dir: "checkpoints"
 num_epochs: 5
 batch_size: 24
@@ -19,11 +22,21 @@ weight_decay: 0.1
 grad_clip_max_norm: 1.0
 log_interval: 80
 
+# model
 d_model: 128
 intermediate_dim: 448 # d_model * 3.5
 num_layers: 6
 num_heads: 16
 num_kv_heads: 8
 base: 10000.0
-dropout: 0.1
-device: "cuda"
+dropout: 0.15
+device: "cuda:3"
+
+# sample
+temperature: 0.5
+max_new_tokens: 500
+best_model_path: checkpoints/epoch_0.pth
+prompts:
+  - "In a small village,"
+  - "Once upon a time,"
+  - "One day,"

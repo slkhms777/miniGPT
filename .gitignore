@@ -18,6 +18,7 @@ hydra_multirun
 
 # datasets
 datasets/*
-
+!datasets/.gitkeep
 # checkpoints
 checkpoints/*
+!checkpoints/.gitkeep
