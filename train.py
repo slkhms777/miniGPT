@@ -21,18 +21,7 @@ def train(cfg: DictConfig):
         num_workers=4
     )
     
-    model = GPT(
-        vocab_size=cfg.vocab_size,
-        max_seq_len=cfg.max_seq_len,
-        d_model=cfg.d_model,
-        num_heads=cfg.num_heads, 
-        num_kv_heads=cfg.num_kv_heads,
-        intermediate_dim=cfg.intermediate_dim, 
-        num_layers=cfg.num_layers, 
-        base=cfg.base, 
-        dropout=cfg.dropout,
-        device=cfg.device
-    )
+    model = GPT(cfg)
     
     optimizer = torch.optim.AdamW(
         params=model.parameters(),

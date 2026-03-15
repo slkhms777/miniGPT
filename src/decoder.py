@@ -4,19 +4,41 @@ from .attention import GQA
 from .mlp import MLP
 from .norm import RMSNorm
 from .rope import precompute_freq_cis
-
+from omegaconf import DictConfig
+from typing import Optional
 class DecoderLayer(nn.Module):
-    def __init__(self, d_model, num_heads, intermediate_dim, 
-        num_kv_heads, max_cache_batch, max_seq_len, dropout=0.1):
-            
+    """
+    Transformer Decoder 层，使用 Pre-LN 结构。
+
+    Args:
+        cfg: 模型参数配置。
+
+    Attributes:
+        norm1: 注意力前的 RMSNorm。
+        attn: 分组查询注意力（GQA）。
+        norm2: FFN 前的 RMSNorm。
+        ffn: SwiGLU MLP。
+    """
+    def __init__(self, cfg: DictConfig):
         super().__init__()
-        self.norm1 = RMSNorm(d_model)
-        self.attn = GQA(d_model, num_heads, num_kv_heads, max_cache_batch, max_seq_len, dropout=dropout)
-        self.norm2 = RMSNorm(d_model)
-        self.ffn = MLP(d_model, intermediate_dim)
+        self.norm1 = RMSNorm(cfg.d_model)
+        self.attn = GQA(cfg)
+        self.norm2 = RMSNorm(cfg.d_model)
+        self.ffn = MLP(cfg.d_model, cfg.intermediate_dim)
     
-    def forward(self, x, start_pos, freqs_cis, mask):
-        # Pre-LN 结构
+    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]) -> torch.Tensor:
+        """
+        Transformer Decoder Layer 前向
+        
+        Args:
+            x (torch.Tensor): 输入张量，形状 (batch_size, seq_len, d_model)。
+            start_pos (int): 推理时的起始位置（用于 KV Cache）。
+            freqs_cis (torch.Tensor): 旋转频率的复数。
+            mask (Optional[torch.Tensor]): 因果掩码。
+
+        Returns:
+            torch.Tensor: 输出张量，形状 (batch_size, seq_len, d_model)。
+        """
         x = x + self.attn(self.norm1(x), start_pos, freqs_cis, mask)
         x = x + self.ffn(self.norm2(x))
         return x

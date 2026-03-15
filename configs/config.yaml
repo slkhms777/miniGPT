@@ -15,7 +15,7 @@ max_seq_len: 513
 
 # train
 ckpt_dir: "checkpoints"
-num_epochs: 5
+num_epochs: 2
 batch_size: 24
 learning_rate: 3e-4
 weight_decay: 0.1
@@ -30,12 +30,13 @@ num_heads: 16
 num_kv_heads: 8
 base: 10000.0
 dropout: 0.15
-device: "cuda:3"
+max_cache_batch: 32
+device: "cuda"
 
 # sample
 temperature: 0.5
 max_new_tokens: 500
-best_model_path: checkpoints/epoch_0.pth
+best_model_path: checkpoints/epoch_1.pth
 prompts:
   - "In a small village,"
   - "Once upon a time,"

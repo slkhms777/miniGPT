@@ -11,46 +11,64 @@ def repeat_kv(x: torch.Tensor, n_rep: int):
     return x.reshape(batch, num_kv_heads * n_rep, seq_len, hidden_dim)
 
 class GQA(nn.Module):
-    def __init__(self, d_model, num_heads, num_kv_heads, max_cache_batch, max_seq_len, dropout=0.1, ):
+    """
+    Group Query Attention (GQA) Layer.
+
+    Attributes:
+        d_model (int): 模型维度/宽度
+        head_dim (int): 每个注意力头的维度
+        num_heads (int): q头数
+        num_kv_heads (int): kv头数
+        dropout (float): 丢弃率
+        max_cache_batch (int): 最大缓存batch
+        max_seq_len (int): 最大上下文长度
+    """
+    def __init__(self, cfg):
         super().__init__()
-        assert d_model % num_heads == 0, f"模型维度 {d_model} 不能被注意力头数 {num_heads} 整除"
+        self.d_model = cfg.d_model
+        self.head_dim = cfg.d_model // cfg.num_heads
+        self.num_heads = cfg.num_heads
+        self.num_kv_heads = cfg.num_kv_heads
+        self.dropout = cfg.dropout
+        self.max_cache_batch = cfg.max_cache_batch
+        self.max_seq_len = cfg.max_seq_len
         
-        self.d_model = d_model
-        self.head_dim = d_model // num_heads
-        self.num_heads = num_heads
-        self.num_kv_heads = num_kv_heads
+        assert self.d_model % self.num_heads == 0, f"模型维度 {self.d_model} 不能被注意力头数 {self.num_heads} 整除"
+        assert self.num_heads % self.num_kv_heads == 0, f"Q 的头数 {self.num_heads} 不能被 KV 头数 {self.num_kv_heads} 整除"
         
-        self.q_proj = nn.Linear(d_model, d_model)
-        self.k_proj = nn.Linear(d_model, num_kv_heads * self.head_dim)
-        self.v_proj = nn.Linear(d_model, num_kv_heads * self.head_dim)
-        self.o_proj = nn.Linear(d_model, d_model)
+        self.q_proj = nn.Linear(self.d_model, self.d_model)
+        self.k_proj = nn.Linear(self.d_model, self.num_kv_heads * self.head_dim)
+        self.v_proj = nn.Linear(self.d_model, self.num_kv_heads * self.head_dim)
+        self.o_proj = nn.Linear(self.d_model, self.d_model)
         
         self.n_rep = self.num_heads // self.num_kv_heads
         self.softmax_scale = self.head_dim ** -0.5
         
-        self.attn_dropout = nn.Dropout(dropout)
-        self.resid_dropout = nn.Dropout(dropout)
+        self.attn_dropout = nn.Dropout(self.dropout)
+        self.resid_dropout = nn.Dropout(self.dropout)
         
         # 延迟初始化：只保存 shape，不分配显存
-        self._cache_shape = (max_cache_batch, max_seq_len, num_kv_heads, self.head_dim)
+        self._cache_shape = (self.max_cache_batch, self.max_seq_len, self.num_kv_heads, self.head_dim)
         self.register_buffer("k_cache", None, persistent=False)
         self.register_buffer("v_cache", None, persistent=False)
         
     def _ensure_cache_initialized(self, device, dtype):
-            """延迟初始化 KV Cache，仅在第一次推理时调用"""
-            if self.k_cache is None:
-                self.k_cache = torch.zeros(self._cache_shape, dtype=dtype, device=device)
-                self.v_cache = torch.zeros(self._cache_shape, dtype=dtype, device=device)
+        """延迟初始化 KV Cache，仅在第一次推理时调用"""
+        if self.k_cache is None:
+            self.k_cache = torch.zeros(self._cache_shape, dtype=dtype, device=device)
+            self.v_cache = torch.zeros(self._cache_shape, dtype=dtype, device=device)
                 
-    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]):
+    def forward(self, x: torch.Tensor, start_pos: int, freqs_cis: torch.Tensor, mask: Optional[torch.Tensor]) -> torch.Tensor:
         """
+        GQA 前向过程
+        
         Args:
             x : 输入张量，Shape:[batch, seq_len, dim]
             start_pos : 当前输入序列的起始位置，同时也是cache中写入的起始位置
             freqs_cis : 预计算的旋转位置编码，Shape:[max_seq_len, head_dim//2]
             mask : 掩码张量，Shape:[1, 1, seq_len, total_seq_len]，如-inf的上三角矩阵，用于遮挡未来位置
         Returns:
-            out : 输出张量，Shape同与输入相同
+            torch.Tensor : 输出张量，Shape与输入相同
         """
         B, seq_len, _ = x.shape
         end_pos = start_pos + seq_len

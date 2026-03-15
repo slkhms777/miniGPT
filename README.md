@@ -82,7 +82,7 @@ python train.py
 
 > **提示**：默认配置（batch_size=24, max_seq_len=513）约需 **16GB 显存**，请根据实际硬件调整参数。经测试4090单卡训练一个 epoch 需要约 3h
 
-### 推理生成
+### 推理
 
 ```bash
 # 使用 uv
@@ -94,7 +94,9 @@ python inference.py
 
 > **生成建议**：由于数据集多样性有限，建议在 configs/config.yaml 中设置 `temperature ≤ 1`，以牺牲部分多样性换取更合理的输出结果。
 
-### 生成示例
+
+
+## 基础续写
 
 **Prompt:**
 ```
@@ -108,6 +110,40 @@ In a small village, there was a little girl named Lily. She liked to help her mo
 Together, they cut a big pot of soup on the stove. Lily was so happy and said, "Thank you, mom!" Her mom smiled and said, "You're welcome, Lily. You're so kind."
 
 Lily and her mom sat down to eat the soup. They talked about how happy they were. They were very happy and thanked Lily for helping her. From that day on, Lily always helped her mom with the soup.
+```
+
+**Prompt:**
+```
+One day
+```
+**Generated:**
+```
+One day, a little boy named Tim went to the park with his mom. They saw a pretty butterfly fluttered in the air. Tim liked to catch it closer to the butterfly. He flew down the rock to see the butterfly. Tim and his mom saw the butterfly, and smiled.
+As they walked, Tim started to feel anxious. He had never seen a butterfly before. He thought it was fun to look out the butterfly, and see what it was saying. It many times, watching the butterfly, bounce its legs, and fly, up and down. Tim knew that it was safe when the butterfly came closer, but he didn't want to delay. His mom hugged him, and said, "Let's look for it again tomorrow!"
+```
+
+## 模型多样性展示
+*同一 Prompt 在不同随机采样下的生成差异（Temperature = 0.5）*
+
+**Prompt:**
+```
+In a kingdom far far away, a little princess discovered
+```
+**Result A:**
+```
+In a kingdom far far away, a little princess discovered a secret place. She wanted to see what was inside the cave. She began to explore and find out what was inside.
+The princess found a long, shiny stone. It was so pretty! She wanted to see what was inside. She started to crawl inside.
+Suddenly, she saw a little mouse. The mouse was scared and ran away. The princess was scared and ran away.
+But the mouse was too fast. He was stuck in a cave. The princess was safe and sound.
+The princess was very happy. She thanked the mouse and ran back to her cave. She was glad she found a secret place to hide.
+```
+**Result B:**
+```
+In a kingdom far far away, a little princess discovered a shiny crown. She was very excited to show it to her friends. She wanted to show them to her friends.
+The princess said, "Look at me! I found a crown!"
+Her friends were so happy that they said, "Yes, you did! Let's go!"
+The princess and her friends ran off to play. They had so much fun that they forgot all about the crown.
+At the end of the day, the princess and her friends hugged each other and said, "We did a great job!"
 ```
 
 ## 参考
