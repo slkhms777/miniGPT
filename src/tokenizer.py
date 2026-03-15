@@ -3,6 +3,15 @@ import tiktoken
 from typing import Dict
 
 class Tokenizer():
+    """
+    基于 tiktoken 二次封装的 Tokenizer。
+    
+    Attributes:
+        enc (tiktoken.core.Encoding): gpt2 编码器
+        vocab_size (int): 词表大小
+        eot_token (int): 句子终止 token_id
+        pad_token (int): 句子填充 token_id (设置等于eot_token) 
+    """
     def __init__(self):
         # self.enc = tiktoken.get_encoding("cl100k_base")
         self.enc = tiktoken.get_encoding("gpt2") # 100277
